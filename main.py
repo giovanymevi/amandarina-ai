@@ -29,8 +29,8 @@ if not GROQ_API_KEY:
     print("ERROR: La variable de entorno GROQ_API_KEY no está configurada.")
 
 @app.get("/")
-def health():
-    return {"status": "ok", "message": "Amandarina AI is running"}
+def root():
+    return {"message": "Hello from Render!"}
 
 @app.post("/chat")
 async def chat(msg: Message):
