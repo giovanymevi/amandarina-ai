@@ -9,14 +9,24 @@ app = FastAPI(title="Amandarina AI Agent")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"]
+    allow_origins=["*"],  # En producción, cambia "*" por ["https://tu-sitio.com"]
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class Message(BaseModel):
     text: str
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-SITE_CONTEXT = get_site_context()
+try:
+    SITE_CONTEXT = get_site_context()
+except Exception as e:
+    print(f"Error al obtener contexto del sitio: {e}")
+    SITE_CONTEXT = "Información general de la agencia AMANDARINA."
+
+# Validación temprana de configuración
+if not GROQ_API_KEY:
+    print("ERROR: La variable de entorno GROQ_API_KEY no está configurada.")
 
 @app.get("/")
 def health():
@@ -55,4 +65,5 @@ Instrucciones:
         data = r.json()
         return {"reply": data["choices"][0]["message"]["content"]}
     except Exception as e:
+        print(f"Error en el endpoint /chat: {e}")
         return {"reply": "Hubo un error. Te conecto con un asesor de AMANDARINA."}

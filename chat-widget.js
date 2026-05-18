@@ -21,12 +21,28 @@
 
   btn.onclick = () => box.style.display = box.style.display === 'none'? 'flex' : 'none';
 
+  function appendMessage(text, isUser) {
+    const msgDiv = document.createElement('div');
+    msgDiv.style.margin = '10px 0';
+    if (isUser) msgDiv.style.textAlign = 'right';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.display = 'inline-block';
+    contentDiv.style.padding = '8px 12px';
+    contentDiv.style.borderRadius = '12px';
+    contentDiv.style.background = isUser ? '#f1f1f1' : '#ff6b35';
+    contentDiv.style.color = isUser ? 'black' : 'white';
+    contentDiv.textContent = text; // Uso de textContent por seguridad (XSS)
+    
+    msgDiv.appendChild(contentDiv);
+    log.appendChild(msgDiv);
+  }
+
   async function sendMessage(){
     const msg = input.value.trim();
     if(!msg) return;
     
-    // Mostrar mensaje del usuario
-    log.innerHTML += `<div style="margin:10px 0;text-align:right;"><div style="display:inline-block;background:#f1f1f1;padding:8px 12px;border-radius:12px;">${msg}</div></div>`;
+    appendMessage(msg, true);
     input.value = '';
 
     // Mostrar indicador de escritura
@@ -34,18 +50,19 @@
     log.scrollTop = log.scrollHeight;
 
     try{
-      // CAMBIAR ESTA URL POR LA DE RENDER
-      const res = await fetch('https://TU-APP-RENDER.onrender.com/chat', {
+      const res = await fetch('https://amandarina-ai.onrender.com/chat', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({text: msg})
       });
       const data = await res.json();
-      document.getElementById('typing').remove();
-      log.innerHTML += `<div style="margin:10px 0;"><div style="display:inline-block;background:#ff6b35;color:white;padding:8px 12px;border-radius:12px;">${data.reply}</div></div>`;
+      const typing = document.getElementById('typing');
+      if(typing) typing.remove();
+      appendMessage(data.reply, false);
       log.scrollTop = log.scrollHeight;
     }catch(e){
-      document.getElementById('typing').remove();
+      const typing = document.getElementById('typing');
+      if(typing) typing.remove();
       log.innerHTML += `<div style="margin:10px 0;color:red;">❌ Error. Intenta de nuevo.</div>`;
     }
   }
