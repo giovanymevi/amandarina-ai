@@ -50,7 +50,9 @@
     log.scrollTop = log.scrollHeight;
 
     try{
-      const res = await fetch('https://amandarina-ai.onrender.com/chat', {
+      // URL de producción (Render). Para pruebas locales usa 'http://127.0.0.1:10000/chat'
+      const apiUrl = 'https://amandarina-ai.onrender.com/chat';
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({text: msg})

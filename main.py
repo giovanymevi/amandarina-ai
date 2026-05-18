@@ -34,6 +34,9 @@ def health():
 
 @app.post("/chat")
 async def chat(msg: Message):
+    if not GROQ_API_KEY:
+        return {"reply": "Error de configuración: Falta la API Key en el servidor."}
+
     system_prompt = f"""Eres el asistente virtual de AMANDARINA, agencia de soluciones digitales en Bucaramanga, Colombia.
 
 Info de la empresa:
@@ -62,8 +65,9 @@ Instrucciones:
                     "max_tokens": 400
                 }
             )
+        r.raise_for_status() # Lanza error si la API de Groq responde con error (4xx, 5xx)
         data = r.json()
         return {"reply": data["choices"][0]["message"]["content"]}
     except Exception as e:
-        print(f"Error en el endpoint /chat: {e}")
+        print(f"Error detallado: {type(e).__name__} - {str(e)}")
         return {"reply": "Hubo un error. Te conecto con un asesor de AMANDARINA."}
