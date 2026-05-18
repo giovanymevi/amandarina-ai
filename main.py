@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+import ipaddress
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
@@ -17,6 +18,26 @@ app.add_middleware(
 class Message(BaseModel):
     text: str
 
+# Configuración de Seguridad: Allowlist de IPs
+ALLOWED_NETWORKS = [
+    ipaddress.ip_network("74.220.48.0/24"),
+    ipaddress.ip_network("74.220.56.0/24")
+]
+
+async def verify_ip_allowlist(request: Request):
+    """Valida que la petición provenga de una IP autorizada."""
+    # Extraer IP de X-Forwarded-For (Render) o del host directo
+    forwarded = request.headers.get("X-Forwarded-For")
+    client_ip_str = forwarded.split(",")[0].strip() if forwarded else request.client.host
+
+    try:
+        client_ip = ipaddress.ip_address(client_ip_str)
+        is_allowed = any(client_ip in network for network in ALLOWED_NETWORKS)
+        if not is_allowed:
+            raise HTTPException(status_code=403, detail="Access denied: IP not authorized")
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied: Invalid IP format")
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 try:
     SITE_CONTEXT = get_site_context()
@@ -32,7 +53,7 @@ if not GROQ_API_KEY:
 def root():
     return {"message": "Hello from Render!"}
 
-@app.post("/chat")
+@app.post("/chat", dependencies=[Depends(verify_ip_allowlist)])
 async def chat(msg: Message):
     if not GROQ_API_KEY:
         return {"reply": "Error de configuración: Falta la API Key en el servidor."}
